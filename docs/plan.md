@@ -114,6 +114,41 @@
 - 질문 문구: 친절한 안내형
 - 질문 템플릿은 관리자 페이지에서 수정 가능
 - 파일 규격 검증은 업로드 후 서버에서 수행
+- 워크플로우: claude 브랜치(백엔드/코어), gemini 브랜치(디자인), codex PR 리뷰
+
+## 운영 절차(브랜치/PR/이슈)
+- 브랜치
+  - main: 보호 브랜치, Codex만 머지
+  - claude: 백엔드/코어 기능
+  - gemini: 프론트엔드 디자인
+- 이슈
+  - 작업 전 반드시 이슈 생성/할당
+  - 라벨: bug, risk, design, missing-test
+  - 이슈 범위 밖 작업 금지
+- PR
+  - PR은 단일 이슈 범위만 포함
+  - Codex가 엄격 리뷰(버그/리스크/테스트 우선)
+  - 문제 발견 시 Issue 생성 → 담당자 해결 후 재리뷰
+  - 승인 후 main 머지
+
+## 작업 배치(초기)
+- Claude(backend/core, claude 브랜치)
+  - Supabase 프로젝트/스키마 마이그레이션
+  - Auth(카카오) 설정/콜백 플로우
+  - CRUD API(프로젝트/답변/페이지/섹션/파일)
+  - Airtable 동기화(단방향) + sync_logs
+  - RLS 정책/권한 구조
+- Gemini(frontend design, gemini 브랜치)
+  - Material 3 디자인 시스템 반영
+  - 사용자 설문 UI/페이지 빌더 화면
+  - 파일 업로드 UI/검증 피드백
+  - 관리자 템플릿 편집 UI
+- Codex(main)
+  - PR 엄격 리뷰 + Issue 생성
+  - 문서 업데이트 확인(설계/디자인)
+
+## Council 결과 요약
+- gemini 응답은 다른 프로젝트(BrandBlog AI) 맥락으로 확인되어 본 프로젝트에는 미반영
 
 ## 체크리스트(개발자가 검토)
 - [ ] Supabase 프로젝트 세팅 및 DB 마이그레이션
