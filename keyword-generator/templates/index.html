@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>키워드 생성기</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f7f3ef;
+        --surface: #fff9f3;
+        --ink: #1f1b16;
+        --muted: #6d5c4f;
+        --accent: #b85c28;
+        --accent-dark: #8e3f14;
+        --outline: #e0d6cc;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Nanum Myeongjo", "Apple SD Gothic Neo", "Malgun Gothic", serif;
+        background: radial-gradient(circle at top, #fff5ea 0%, #f0e6db 60%, #eadbcf 100%);
+        color: var(--ink);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 32px 16px;
+      }
+
+      .card {
+        width: min(720px, 100%);
+        background: var(--surface);
+        border: 1px solid var(--outline);
+        border-radius: 24px;
+        padding: 32px;
+        box-shadow: 0 20px 40px rgba(64, 46, 36, 0.15);
+      }
+
+      h1 {
+        margin: 0 0 16px;
+        font-size: 32px;
+        letter-spacing: -0.02em;
+      }
+
+      p {
+        margin: 0 0 24px;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      form {
+        display: grid;
+        gap: 16px;
+      }
+
+      label {
+        font-weight: 600;
+        display: block;
+        margin-bottom: 8px;
+      }
+
+      input[type="file"],
+      input[type="text"] {
+        width: 100%;
+        padding: 12px 14px;
+        border-radius: 12px;
+        border: 1px solid var(--outline);
+        background: #fff;
+      }
+
+      select {
+        width: 100%;
+        padding: 12px 14px;
+        border-radius: 12px;
+        border: 1px solid var(--outline);
+        background: #fff;
+        font-family: inherit;
+        font-size: 14px;
+      }
+
+      textarea {
+        width: 100%;
+        padding: 12px 14px;
+        border-radius: 12px;
+        border: 1px solid var(--outline);
+        background: #fff;
+        font-family: inherit;
+        font-size: 14px;
+      }
+
+      .hint {
+        font-size: 14px;
+        color: var(--muted);
+      }
+
+      .error-box {
+        border-radius: 12px;
+        border: 1px solid #e5b8a0;
+        background: #fff1e6;
+        color: #7a2b05;
+        padding: 12px 14px;
+        font-size: 14px;
+      }
+
+      .error-box strong {
+        display: block;
+        margin-bottom: 6px;
+      }
+
+      .warning-box {
+        border-radius: 12px;
+        border: 1px solid #f0c36d;
+        background: #fff7e0;
+        color: #7a5a12;
+        padding: 12px 14px;
+        font-size: 14px;
+      }
+
+      .warning-box strong {
+        display: block;
+        margin-bottom: 6px;
+      }
+
+      button {
+        margin-top: 8px;
+        padding: 14px 18px;
+        border-radius: 999px;
+        border: none;
+        background: var(--accent);
+        color: white;
+        font-weight: 600;
+        font-size: 16px;
+        cursor: pointer;
+        transition: transform 0.2s ease, background 0.2s ease;
+      }
+
+      button:hover {
+        background: var(--accent-dark);
+        transform: translateY(-1px);
+      }
+
+      .grid {
+        display: grid;
+        gap: 16px;
+      }
+
+      .preview {
+        margin-top: 24px;
+        border-top: 1px dashed var(--outline);
+        padding-top: 16px;
+      }
+
+      .preview table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+      }
+
+      .preview th,
+      .preview td {
+        padding: 8px;
+        border-bottom: 1px solid var(--outline);
+        text-align: left;
+      }
+
+      .download {
+        display: inline-block;
+        margin-top: 16px;
+        padding: 12px 16px;
+        border-radius: 999px;
+        background: #1f5d4e;
+        color: #fff;
+        text-decoration: none;
+        font-weight: 600;
+      }
+
+      .pattern-list {
+        display: grid;
+        gap: 8px;
+      }
+
+      .pattern-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        color: var(--muted);
+      }
+
+      @media (max-width: 600px) {
+        .card {
+          padding: 24px;
+        }
+
+        h1 {
+          font-size: 26px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>키워드 생성기</h1>
+      <p>
+        상호명/주소/주요서비스 CSV와 광고그룹 ID CSV를 업로드하면
+        1000개 CSV를 ZIP으로 다운로드합니다.
+      </p>
+      <form action="/generate" method="post" enctype="multipart/form-data">
+        {% if error %}
+        <div class="error-box">
+          <strong>오류</strong>
+          <div class="error-text">{{ error }}</div>
+        </div>
+        {% endif %}
+        {% if warning %}
+        <div class="warning-box">
+          <strong>알림</strong>
+          <div class="warning-text">{{ warning }}</div>
+        </div>
+        {% endif %}
+        <div class="grid">
+          <div>
+            <label for="input_csv">입력 CSV</label>
+            <input id="input_csv" name="input_csv" type="file" accept=".csv" required />
+            <div class="hint">컬럼: 상호명, 주소(도로명), 주요서비스</div>
+          </div>
+          <div>
+            <label for="ad_groups_csv">광고그룹 CSV</label>
+            <input id="ad_groups_csv" name="ad_groups_csv" type="file" accept=".csv" required />
+            <div class="hint">컬럼: ad_group_id (1000개)</div>
+          </div>
+          <div>
+            <label for="poi_filter_set">랜드마크 필터 세트</label>
+            <select id="poi_filter_set" name="poi_filter_set">
+              {% for set_name in poi_filter_sets or [] %}
+              <option value="{{ set_name }}" {% if set_name == poi_filter_set %}selected{% endif %}>
+                {{ set_name }}
+              </option>
+              {% endfor %}
+            </select>
+            <div class="hint">업종에 맞는 세트를 선택하세요.</div>
+          </div>
+          <div>
+            <label for="extra_terms_csv">추가 키워드 CSV (선택)</label>
+            <input id="extra_terms_csv" name="extra_terms_csv" type="file" accept=".csv" />
+            <div class="hint">한 열에 키워드만 넣어주세요.</div>
+          </div>
+          <div>
+            <label for="output_name">ZIP 파일명</label>
+            <input id="output_name" name="output_name" type="text" value="keyword_exports" />
+          </div>
+        </div>
+        <button type="submit">검색광고용 키워드 추출하기</button>
+      </form>
+      {% if regions_text or services_text or modifiers_text or pois_text %}
+      <div class="preview">
+        <h2>조합 전 목록</h2>
+        <form action="/regenerate" method="post">
+          <input type="hidden" name="token" value="{{ token }}" />
+          <div class="grid">
+            <div>
+              <label for="regions">지역 키워드</label>
+              <textarea id="regions" name="regions" rows="6">{{ regions_text }}</textarea>
+            </div>
+            <div>
+              <label for="services">서비스/업종 키워드</label>
+              <textarea id="services" name="services" rows="6">{{ services_text }}</textarea>
+            </div>
+            <div>
+              <label for="modifiers">수식어</label>
+              <textarea id="modifiers" name="modifiers" rows="6">{{ modifiers_text }}</textarea>
+            </div>
+            <div>
+              <label for="pois">POI (지하철/랜드마크)</label>
+              <textarea id="pois" name="pois" rows="6">{{ pois_text }}</textarea>
+            </div>
+            <div>
+              <label>조합 패턴</label>
+              <div class="pattern-list">
+                {% for pattern in pattern_options %}
+                <label class="pattern-item">
+                  <input
+                    type="checkbox"
+                    name="patterns"
+                    value="{{ pattern }}"
+                    {% if pattern in selected_patterns %}checked{% endif %}
+                  />
+                  <span>{{ pattern }}</span>
+                </label>
+                {% endfor %}
+              </div>
+              <div class="hint">체크된 패턴만 조합에 사용됩니다.</div>
+              <label for="patterns_custom">추가 패턴 (직접 입력)</label>
+              <textarea id="patterns_custom" name="patterns_custom" rows="4">{{ patterns_custom_text }}</textarea>
+              <div class="hint">한 줄에 하나씩 입력하세요. "+" 또는 "," 사용 가능.</div>
+            </div>
+          </div>
+          <button type="submit">재생성</button>
+        </form>
+      </div>
+      {% endif %}
+      {% if preview %}
+      <div class="preview">
+        <h2>미리보기 (상위 100개)</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>키워드</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for keyword in preview %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td>{{ keyword }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% if download_url %}
+        <a class="download" href="{{ download_url }}">ZIP 다운로드</a>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </body>
+</html>

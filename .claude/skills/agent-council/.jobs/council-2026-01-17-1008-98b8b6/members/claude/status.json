@@ -1,0 +1,10 @@
+{
+  "member": "claude",
+  "state": "done",
+  "message": null,
+  "finishedAt": "2026-01-17T10:09:44.416Z",
+  "command": "claude",
+  "exitCode": 0,
+  "signal": null,
+  "pid": 67036
+}

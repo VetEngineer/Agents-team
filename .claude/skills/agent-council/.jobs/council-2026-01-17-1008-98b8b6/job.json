@@ -1,0 +1,25 @@
+{
+  "id": "council-2026-01-17-1008-98b8b6",
+  "createdAt": "2026-01-17T10:08:38.012Z",
+  "configPath": "/Volumes/Silvernine/Workspace/Agents-team/.claude/skills/agent-council/council.config.yaml",
+  "hostRole": "claude",
+  "chairmanRole": "codex",
+  "settings": {
+    "excludeChairmanFromMembers": true,
+    "timeoutSec": 120
+  },
+  "members": [
+    {
+      "name": "gemini",
+      "command": "gemini",
+      "emoji": "💎",
+      "color": "GREEN"
+    },
+    {
+      "name": "claude",
+      "command": "claude",
+      "emoji": "🧠",
+      "color": "CYAN"
+    }
+  ]
+}
