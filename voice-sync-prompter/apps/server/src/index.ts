@@ -9,14 +9,20 @@ import { transcriptionRoutes } from './routes/transcription'
 import { subscriptionRoutes } from './routes/subscription'
 import { webhookRoutes } from './routes/webhook'
 
+const isDev = process.env.NODE_ENV !== 'production'
+
 const fastify = Fastify({
-  logger: {
-    level: process.env.LOG_LEVEL || 'info',
-    transport: {
-      target: 'pino-pretty',
-      options: { colorize: true },
-    },
-  },
+  logger: isDev
+    ? {
+        level: process.env.LOG_LEVEL || 'info',
+        transport: {
+          target: 'pino-pretty',
+          options: { colorize: true },
+        },
+      }
+    : {
+        level: process.env.LOG_LEVEL || 'info',
+      },
 })
 
 // Plugins
