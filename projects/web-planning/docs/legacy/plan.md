@@ -158,6 +158,7 @@
 ## 변경 로그
 - 2025-02-14: 초기 요구사항/설계/체크리스트 작성
 - 2025-02-14: Material 3 기반 UI/UX 가이드 문서 추가(docs/design.md)
+- 2025-02-14: apps/planner Next.js 스캐폴딩 생성(gemini 브랜치)
 
 ---
 
