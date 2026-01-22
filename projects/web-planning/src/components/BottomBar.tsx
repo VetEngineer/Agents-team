@@ -2,10 +2,10 @@ import Link from "next/link";
 import styles from "./BottomBar.module.css";
 
 const items = [
-  { label: "Home", href: "/dashboard" },
-  { label: "Survey", href: "/survey" },
-  { label: "Builder", href: "/builder" },
-  { label: "Admin", href: "/admin" },
+  { label: "홈", href: "/dashboard" },
+  { label: "설문", href: "/survey" },
+  { label: "빌더", href: "/builder" },
+  { label: "관리자", href: "/admin" },
 ];
 
 export default function BottomBar() {

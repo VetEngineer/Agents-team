@@ -1,64 +1,84 @@
 .rail {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-6);
-  padding: var(--space-6) var(--space-3);
-  background: var(--surface);
-  border-right: 1px solid var(--surface-variant);
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  align-items: start;
+  justify-items: center;
+  padding: var(--space-3) var(--space-2) var(--space-4);
+  background: rgba(248, 250, 252, 0.92);
+  border-right: 1px solid rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(12px);
+  width: 80px;
+  min-height: 100vh;
 }
 
 .brand {
-  width: 48px;
-  height: 48px;
-  border-radius: var(--radius-large);
-  background: var(--primary-container);
-  color: var(--on-primary-container);
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-medium);
+  background: linear-gradient(140deg, #0f766e, #1e293b);
+  color: #ffffff;
   display: grid;
   place-items: center;
   font-weight: 700;
+  font-family: var(--font-display);
+  letter-spacing: 0.04em;
+}
+
+.brandImage {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  display: block;
 }
 
 .nav {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-2);
+  padding: var(--space-3) 0;
   width: 100%;
+  align-items: center;
 }
 
 .link {
+  position: relative;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: var(--space-3);
-  padding: 10px 12px;
-  border-radius: 999px;
+  gap: 4px;
+  padding: 8px 0;
+  border-radius: var(--radius-full);
+  min-height: 56px;
+  width: 100%;
   color: var(--on-surface);
-  font-size: 13px;
-  transition: background 0.2s ease-in-out;
+  font-size: 11px;
+  transition: background 0.2s ease-in-out, color 0.2s ease-in-out;
+  text-align: center;
 }
 
 .link:hover {
-  background: var(--surface-variant);
+  background: rgba(15, 118, 110, 0.12);
 }
 
 .dot {
-  width: 10px;
-  height: 10px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  background: var(--secondary);
+  background: rgba(15, 118, 110, 0.18);
 }
 
 .label {
   white-space: nowrap;
+  font-weight: 500;
 }
 
 .footer {
-  margin-top: auto;
-  font-size: 12px;
+  font-size: 11px;
   color: var(--outline);
+  padding-bottom: var(--space-3);
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .rail {
     display: none;
   }

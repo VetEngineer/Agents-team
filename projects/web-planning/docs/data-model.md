@@ -25,9 +25,12 @@ Store a point-in-time snapshot used for export. Keep raw answers separate.
     "phone": "string"
   },
   "basic": {
+    "project_name": "string",
     "industry": "string",
     "brand_name_ko": "string",
     "brand_name_en": "string",
+    "key_message": "string",
+    "target_audience": "string",
     "existing_site_url": "string",
     "desired_launch_date": "YYYY-MM-DD",
     "constraints_text": "string"
