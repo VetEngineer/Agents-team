@@ -53,8 +53,8 @@
 }
 
 .brandLogo {
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   border-radius: var(--radius-medium);
   background: #ffffff;
   object-fit: contain;
@@ -68,13 +68,14 @@
 
 .brandName {
   font-size: 18px;
+  line-height: 24px;
   font-weight: 600;
   font-family: var(--font-display);
 }
 
 .brandNameEn {
-  font-size: 12px;
-  letter-spacing: 0.1em;
+  font-size: 11px;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--outline);
 }
@@ -388,11 +389,12 @@
   }
 
   .brandLogo {
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
   }
 
   .brandName {
     font-size: 16px;
+    line-height: 22px;
   }
 }

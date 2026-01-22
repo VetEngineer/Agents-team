@@ -97,8 +97,8 @@ export default function AppBar({ title, subtitle }: AppBarProps) {
             <Image
               src="/brand/logo-mark.png"
               alt="하감솔루션 로고"
-              width={20}
-              height={20}
+              width={24}
+              height={24}
               className={styles.brandMark}
             />
             <span className={styles.brandName}>하감솔루션</span>
