@@ -3,49 +3,49 @@ import styles from "../styles.module.css";
 
 export default function AdminPage() {
   return (
-    <AppShell title="Admin" subtitle="Templates and asset requirements">
+    <AppShell title="관리자" subtitle="템플릿과 에셋 요구사항 관리">
       <section className={styles.sectionGrid}>
         <div className={styles.card}>
-          <h3 className={styles.cardTitle}>Question templates</h3>
+          <h3 className={styles.cardTitle}>질문 템플릿</h3>
           <div className={styles.list}>
             {[
-              "Brand intro",
-              "Target audience",
-              "Page structure",
-              "Style guide",
+              "브랜드 소개",
+              "타겟 고객",
+              "페이지 구조",
+              "스타일 가이드",
             ].map((item) => (
               <div key={item} className={styles.dragItem}>
                 <span>{item}</span>
-                <span className={styles.chip}>Required</span>
+                <span className={styles.chip}>필수</span>
               </div>
             ))}
           </div>
-          <button className={styles.linkButton}>+ New question</button>
+          <button className={styles.linkButton}>+ 질문 추가</button>
         </div>
         <div className={styles.card}>
-          <h3 className={styles.cardTitle}>File requirements</h3>
+          <h3 className={styles.cardTitle}>파일 요구사항</h3>
           <div className={styles.list}>
             {[
-              "Logo (AI/SVG)",
-              "Hero banner 1920px",
-              "Service images",
-              "Testimonials",
+              "로고 (AI/SVG)",
+              "히어로 배너 1920px",
+              "서비스 이미지",
+              "후기",
             ].map((item) => (
               <div key={item} className={styles.dragItem}>
                 <span>{item}</span>
-                <span className={styles.badge}>Required</span>
+                <span className={styles.badge}>필수</span>
               </div>
             ))}
           </div>
-          <button className={styles.linkButton}>+ Add requirement</button>
+          <button className={styles.linkButton}>+ 요구사항 추가</button>
         </div>
       </section>
       <section className={styles.card}>
-        <h3 className={styles.cardTitle}>Upload status preview</h3>
+        <h3 className={styles.cardTitle}>업로드 현황 미리보기</h3>
         <div className={styles.row}>
-          <span className={styles.badge}>Logo: Pass</span>
-          <span className={styles.chip}>Banner: Missing</span>
-          <span className={styles.chip}>Services: 2/3</span>
+          <span className={styles.badge}>로고: 통과</span>
+          <span className={styles.chip}>배너: 없음</span>
+          <span className={styles.chip}>서비스: 2/3</span>
         </div>
       </section>
     </AppShell>

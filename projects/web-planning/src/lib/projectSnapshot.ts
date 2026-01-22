@@ -1,5 +1,12 @@
-import type { Json } from "@/lib/database.types";
 import { getSupabaseClient } from "@/lib/supabase";
+
+type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[];
 
 type SnapshotPayload = {
   project_id: string;
@@ -10,9 +17,12 @@ type SnapshotPayload = {
     phone: string | null;
   };
   basic: {
+    project_name: string | null;
     industry: string | null;
     brand_name_ko: string | null;
     brand_name_en: string | null;
+    key_message: string | null;
+    target_audience: string | null;
     existing_site_url: string | null;
     desired_launch_date: string | null;
     constraints_text: string | null;
@@ -194,9 +204,12 @@ export async function buildProjectSnapshot(projectId: string) {
       phone: owner?.phone ?? project.contact_phone ?? null,
     },
     basic: {
+      project_name: project.project_name ?? null,
       industry: project.industry ?? null,
       brand_name_ko: project.brand_name_ko ?? null,
       brand_name_en: project.brand_name_en ?? null,
+      key_message: project.key_message ?? null,
+      target_audience: project.target_audience ?? null,
       existing_site_url: project.existing_site_url ?? null,
       desired_launch_date: project.desired_launch_date ?? null,
       constraints_text: project.constraints_text ?? null,

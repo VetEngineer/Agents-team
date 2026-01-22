@@ -5,28 +5,30 @@
   right: 0;
   display: none;
   justify-content: space-around;
-  padding: var(--space-3) var(--space-4);
-  background: var(--surface);
-  border-top: 1px solid var(--surface-variant);
+  padding: 8px var(--space-4) calc(12px + env(safe-area-inset-bottom, 0px));
+  height: 80px;
+  background: rgba(248, 250, 252, 0.92);
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(12px);
 }
 
 .item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   font-size: 11px;
   color: var(--outline);
 }
 
 .icon {
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  background: var(--secondary-container);
+  background: rgba(15, 118, 110, 0.18);
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .bar {
     display: flex;
   }
