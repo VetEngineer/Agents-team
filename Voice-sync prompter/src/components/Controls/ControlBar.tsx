@@ -11,10 +11,21 @@ import {
   FlipHorizontal,
   AlertCircle,
   Loader2,
+  Circle,
+  Square,
+  Download,
 } from 'lucide-react'
+import { useCallback } from 'react'
 import { Button } from '@/components/ui/button'
-import { useSettingsStore, useRecognitionStore, useScriptStore } from '@/store'
-import { useSpeechRecognition } from '@/hooks'
+import {
+  useSettingsStore,
+  useRecognitionStore,
+  useScriptStore,
+  useRecordingStore,
+  useSubtitleSettingsStore,
+} from '@/store'
+import { useSpeechRecognition, useChunkedRecorder, useWhisperPipeline } from '@/hooks'
+import { generateSrt, downloadSrt, mergeAudioChunks, downloadAudio } from '@/utils/srtGenerator'
 import { cn } from '@/lib/utils'
 
 interface ControlBarProps {
@@ -30,15 +41,50 @@ const STATUS_CONFIG = {
   error: { text: '오류', color: 'text-red-500', bgColor: 'bg-red-500/20' },
 }
 
+// 시간 포맷 함수
+const formatTime = (seconds: number): string => {
+  const mins = Math.floor(seconds / 60)
+  const secs = Math.floor(seconds % 60)
+  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+}
+
 export const ControlBar = ({ onSettingsClick }: ControlBarProps) => {
   const { viewMode, setViewMode, theme, toggleTheme, mirrorMode, setMirrorMode, autoScrollEnabled, setAutoScrollEnabled } = useSettingsStore()
   const { status, isSupported, errorMessage, interimText } = useRecognitionStore()
   const { text, currentLine, lines } = useScriptStore()
+  const {
+    status: recordingStatus,
+    totalDuration,
+    currentChunkIndex,
+    currentChunkDuration,
+    completedChunks,
+    processingChunks,
+    mergedSegments,
+    srtReady,
+    errorMessage: recordingError,
+    chunks,
+    mergedAudioBlob,
+    audioReady,
+    setMergedAudioBlob,
+    setAudioReady,
+    setStatus: setRecordingStatus,
+  } = useRecordingStore()
+  const { maxCharsPerLine, linesPerSubtitle, openaiApiKey } = useSubtitleSettingsStore()
 
   const { startListening, stopListening } = useSpeechRecognition({})
+  const { startRecording, stopRecording } = useChunkedRecorder({
+    onChunkComplete: (chunk) => {
+      // 청크 완료 시 백그라운드에서 API 호출
+      processChunk(chunk)
+    }
+  })
+  const { processChunk, processAllChunks, finalizeAndMerge } = useWhisperPipeline()
 
   // status가 'listening' 또는 'requesting'이면 활성 상태로 간주
   const isActive = status === 'listening' || status === 'requesting'
+  const isRecordingActive = recordingStatus === 'recording' || recordingStatus === 'paused'
+  const isProcessingRecording = recordingStatus === 'processing'
+  const hasApiKey = openaiApiKey && openaiApiKey.length > 0
 
   const handleMicToggle = () => {
     if (isActive) {
@@ -47,6 +93,62 @@ export const ControlBar = ({ onSettingsClick }: ControlBarProps) => {
       startListening()
     }
   }
+
+  // 녹음 시작/중지
+  const handleRecordToggle = useCallback(async () => {
+    if (isRecordingActive) {
+      // 녹음 중지 → 청크 병합 → API 키 유무에 따라 분기
+      const lastChunk = await stopRecording()
+
+      // 모든 청크 수집 (마지막 청크 포함)
+      const allChunks = lastChunk ? [...chunks, lastChunk] : chunks
+
+      if (allChunks.length > 0) {
+        // 오디오 청크 병합
+        const mergedBlob = mergeAudioChunks(allChunks)
+        setMergedAudioBlob(mergedBlob)
+        setAudioReady(true)
+
+        // API 키가 있으면 Whisper API 호출
+        if (hasApiKey) {
+          if (lastChunk) {
+            await processChunk(lastChunk)
+          }
+          // 남은 청크 처리
+          await processAllChunks()
+          // 최종 병합
+          finalizeAndMerge()
+        } else {
+          // API 키 없으면 바로 완료 상태로 전환
+          setRecordingStatus('completed')
+        }
+      }
+
+    } else {
+      // 녹음 시작 (음성 인식도 같이 시작)
+      if (!isActive) {
+        startListening()
+      }
+      await startRecording()
+    }
+  }, [isRecordingActive, isActive, stopRecording, processChunk, processAllChunks, finalizeAndMerge, startListening, startRecording, chunks, hasApiKey, setMergedAudioBlob, setAudioReady, setRecordingStatus])
+
+  // SRT 다운로드
+  const handleDownloadSrt = useCallback(() => {
+    if (mergedSegments.length === 0) return
+
+    const srtContent = generateSrt(mergedSegments, maxCharsPerLine, linesPerSubtitle)
+    const timestamp = new Date().toISOString().slice(0, 10)
+    downloadSrt(srtContent, `subtitle_${timestamp}.srt`)
+  }, [mergedSegments, maxCharsPerLine, linesPerSubtitle])
+
+  // 오디오 다운로드
+  const handleDownloadAudio = useCallback(() => {
+    if (!mergedAudioBlob) return
+
+    const timestamp = new Date().toISOString().slice(0, 10)
+    downloadAudio(mergedAudioBlob, `recording_${timestamp}.webm`)
+  }, [mergedAudioBlob])
 
   const statusConfig = STATUS_CONFIG[status]
 
@@ -85,7 +187,7 @@ export const ControlBar = ({ onSettingsClick }: ControlBarProps) => {
         <div className="flex items-center gap-3">
           {viewMode === 'prompter' && (
             <>
-              {/* 마이크 버튼 */}
+              {/* 마이크 버튼 (음성 인식) */}
               <Button
                 variant={isActive ? 'destructive' : 'default'}
                 size="default"
@@ -108,6 +210,61 @@ export const ControlBar = ({ onSettingsClick }: ControlBarProps) => {
                   </>
                 )}
               </Button>
+
+              {/* 녹음 버튼 */}
+              <Button
+                variant={isRecordingActive ? 'destructive' : 'outline'}
+                size="default"
+                onClick={handleRecordToggle}
+                disabled={isProcessingRecording}
+                className={cn(
+                  "gap-2 min-w-[120px]",
+                  isRecordingActive && "animate-pulse"
+                )}
+              >
+                {isProcessingRecording ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    처리 중
+                  </>
+                ) : isRecordingActive ? (
+                  <>
+                    <Square className="w-4 h-4 fill-current" />
+                    녹음 중지
+                  </>
+                ) : (
+                  <>
+                    <Circle className="w-4 h-4 fill-red-500 text-red-500" />
+                    녹음 시작
+                  </>
+                )}
+              </Button>
+
+              {/* SRT 다운로드 버튼 */}
+              {srtReady && mergedSegments.length > 0 && (
+                <Button
+                  variant="outline"
+                  size="default"
+                  onClick={handleDownloadSrt}
+                  className="gap-2"
+                >
+                  <Download className="w-4 h-4" />
+                  SRT 다운로드
+                </Button>
+              )}
+
+              {/* 오디오 다운로드 버튼 */}
+              {audioReady && mergedAudioBlob && (
+                <Button
+                  variant="outline"
+                  size="default"
+                  onClick={handleDownloadAudio}
+                  className="gap-2"
+                >
+                  <Download className="w-4 h-4" />
+                  오디오 다운로드
+                </Button>
+              )}
 
               {/* 상태 인디케이터 */}
               <div className={cn(
@@ -192,16 +349,46 @@ export const ControlBar = ({ onSettingsClick }: ControlBarProps) => {
       {/* 음성 인식 상태 바 (프롬프터 모드에서만) */}
       {viewMode === 'prompter' && (
         <div className="h-8 px-4 flex items-center gap-4 border-t border-border/50 bg-muted/30 text-xs">
+          {/* 녹음 상태 */}
+          {isRecordingActive && (
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <Circle className="relative w-2 h-2 fill-red-500 text-red-500" />
+              </span>
+              <span className="text-red-500 font-medium">REC</span>
+              <span className="text-muted-foreground">{formatTime(totalDuration)}</span>
+              <span className="text-muted-foreground">|</span>
+              <span className="text-muted-foreground">청크 {currentChunkIndex + 1}</span>
+              <span className="text-muted-foreground">({formatTime(currentChunkDuration)}/10:00)</span>
+            </div>
+          )}
+
+          {/* API 처리 상태 */}
+          {(processingChunks > 0 || completedChunks > 0) && (
+            <div className="flex items-center gap-2">
+              {processingChunks > 0 && (
+                <span className="text-blue-500 flex items-center gap-1">
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  처리 중: {processingChunks}
+                </span>
+              )}
+              {completedChunks > 0 && (
+                <span className="text-green-500">완료: {completedChunks}</span>
+              )}
+            </div>
+          )}
+
           {/* 에러 메시지 */}
-          {errorMessage && (
+          {(errorMessage || recordingError) && (
             <div className="flex items-center gap-1 text-destructive">
               <AlertCircle className="w-3 h-3" />
-              <span>{errorMessage}</span>
+              <span>{errorMessage || recordingError}</span>
             </div>
           )}
 
           {/* 실시간 인식 텍스트 */}
-          {status === 'listening' && (
+          {status === 'listening' && !errorMessage && !recordingError && (
             <div className="flex-1 flex items-center gap-2 overflow-hidden">
               <span className="text-muted-foreground shrink-0">인식:</span>
               <span className={cn(
@@ -230,9 +417,9 @@ export const ControlBar = ({ onSettingsClick }: ControlBarProps) => {
           )}
 
           {/* 대기 상태 안내 */}
-          {status === 'idle' && isSupported && !errorMessage && (
+          {status === 'idle' && isSupported && !errorMessage && !recordingError && !isRecordingActive && (
             <span className="text-muted-foreground">
-              '시작' 버튼을 눌러 음성 인식을 시작하세요
+              '시작' 버튼을 눌러 음성 인식을 시작하세요 {!hasApiKey && '| 자막 생성은 설정에서 API 키를 입력하세요'}
             </span>
           )}
         </div>

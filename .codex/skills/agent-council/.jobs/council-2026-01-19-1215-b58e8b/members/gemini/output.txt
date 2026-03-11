@@ -1,0 +1,33 @@
+I will start by reading the root `README.md`, `plan.md` and `AGENTS-BOUNDARY.md` to understand the overarching goals and context of the workspace.
+I will list the contents of the `keyword-generator` directory to understand its relevance to the BrandBlog AI plan.
+My review of the `plan.md` for **BrandBlog AI** reveals a well-structured roadmap for an automated content marketing platform. However, the proposed architecture introduces significant complexity that may hinder initial MVP velocity.
+
+### 1. Architecture & Tech Stack
+*   **Complexity Risk (Next.js + FastAPI + Workers):** The plan proposes a split stack: Next.js (Frontend/API), FastAPI (AI Pipeline), and BullMQ (Workers).
+    *   **Risk:** Running three separate compute contexts (Serverless Web, Python API, Node.js Worker) drastically increases deployment complexity. Vercel (mentioned target) handles Next.js well but is *not* designed for persistent BullMQ workers or long-running Python processes.
+    *   **Recommendation:**
+        *   **Option A (Simpler):** Drop FastAPI. Use Next.js for everything. The AI SDKs (OpenAI/Anthropic) work perfectly in Node.js. Only keep Python if you rely on specific data science libraries from `keyword-generator`.
+        *   **Option B (Robust):** If Python is essential, use a monorepo setup (e.g., Turborepo) but identify a hosting provider that supports Docker/VPS (like Railway or Render) for the Backend/Worker components, as Vercel functions have timeout limits (usually 10-60s) unsuitable for long chain-of-thought generation or polling.
+
+### 2. Data Model
+*   **Security Risk (Credentials):** `PublishingAccount` stores credentials for Tistory/Naver.
+    *   **Risk:** Storing raw/encrypted passwords is high-risk.
+    *   **Mitigation:** Prioritize OAuth 2.0 flows where available (WordPress.com, Medium). For Tistory/Naver, ensure robust encryption at rest (e.g., AWS KMS) and consider "Client-side" publishing (user enters creds only at publish time) for the MVP to reduce liability.
+*   **Data Structure:** The `ContentRequest` -> `ContentOutline` -> `GeneratedContent` separation is excellent. It correctly isolates the high-cost generation step.
+
+### 3. UX Flow
+*   **Gap (Iterative Feedback):** The "Outline Review" step is critical. The UI needs to allow not just "Approval" but *granular manipulation*: reordering sections, editing specific prompts for a section (e.g., "Make this section funnier"), and regenerating *parts* of the outline.
+*   **Gap (Asset Management):** The plan mentions "Brand Assets" (images, tone). The UX for "teaching" the AI the brand tone (uploading reference articles, parsing them, and visualizing the extracted "Style") is a complex flow that needs its own design spec.
+
+### 4. Automation
+*   **Execution Gap:** "Monitoring" RSS/YouTube requires a persistent scheduler.
+    *   **Recommendation:** Use **Trigger.dev** or **Inngest** instead of building a custom BullMQ + node-cron setup. These serverless-friendly job queues handle the infrastructure for long-running tasks, retries, and scheduling without needing to manage your own worker servers. This aligns better with a Vercel-based stack.
+
+### Suggested Next Steps
+
+1.  **Scaffold Project:** Initialize a `brand-blog-ai` directory with Next.js 14.
+2.  **Tech Decision:** Decide on the **Job Queue** architecture (Custom BullMQ vs. Trigger.dev/Inngest) and **Backend** (Pure Next.js vs. Separate Python). *I recommend Pure Next.js + Trigger.dev for speed and simplicity.*
+3.  **Prototype Core Pipeline:** Implement the "Outline Generation" prompt chain in a script or simple UI to validate the quality before building the full management system.
+4.  **Migrate Logic:** Port the useful logic from `keyword-generator` (if applicable) into the new TypeScript-based structure.
+
+**Shall I proceed with scaffolding the project or prototyping the Outline Generation prompt?**

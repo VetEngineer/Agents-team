@@ -13,6 +13,36 @@ export interface LineProgressResult {
   totalLength: number   // 전체 줄 길이
 }
 
+export interface LineMatchResult {
+  lineIndex: number
+  confidence: number
+  direction: 'forward' | 'backward' | 'same'
+}
+
+export interface FindMatchingLineOptions {
+  forwardBias: number       // 전진 보너스 (기본값: 0.1)
+  backwardThreshold: number // 이전 줄 이동 임계값 (기본값: 0.7)
+  forwardThreshold: number  // 다음 줄 이동 임계값 (기본값: 0.4)
+}
+
+/**
+ * 후진 키워드 감지 (사용자가 "다시" 등을 말했을 때)
+ */
+export const detectBackwardKeyword = (recognizedText: string): {
+  detected: boolean
+  keyword: string | null
+} => {
+  const backwardKeywords = ['다시', '다시요', '뒤로', '이전']
+  const normalized = normalizeText(recognizedText)
+
+  for (const keyword of backwardKeywords) {
+    if (normalized.includes(keyword)) {
+      return { detected: true, keyword }
+    }
+  }
+  return { detected: false, keyword: null }
+}
+
 /**
  * Levenshtein Distance 기반 유사도 계산
  */
@@ -90,13 +120,21 @@ export const findBestMatch = (
 
 /**
  * 줄 기반 매칭 - 어떤 줄에서 매칭되는지 찾기
+ * 방향별 차등 임계값과 전진 편향을 적용하여 자연스러운 진행 유도
  */
 export const findMatchingLine = (
   lines: string[],
   recognizedText: string,
   currentLine: number = 0,
-  searchLineRange: number = 5
-): { lineIndex: number; confidence: number } | null => {
+  searchLineRange: number = 5,
+  options: Partial<FindMatchingLineOptions> = {}
+): LineMatchResult | null => {
+  const {
+    forwardBias = 0.1,       // 전진 보너스
+    backwardThreshold = 0.7, // 이전 줄 이동 임계값 (높음)
+    forwardThreshold = 0.4,  // 다음 줄 이동 임계값 (낮음)
+  } = options
+
   if (!recognizedText.trim() || lines.length === 0) {
     return null
   }
@@ -111,8 +149,8 @@ export const findMatchingLine = (
   const startLine = Math.max(0, currentLine - searchLineRange)
   const endLine = Math.min(lines.length, currentLine + searchLineRange + 1)
 
-  let bestMatch: { lineIndex: number; confidence: number } | null = null
-  let bestSimilarity = 0
+  let bestMatch: LineMatchResult | null = null
+  let bestAdjustedSimilarity = 0
 
   for (let i = startLine; i < endLine; i++) {
     const normalizedLine = normalizeText(lines[i])
@@ -125,20 +163,34 @@ export const findMatchingLine = (
     // 또는 줄에 인식된 텍스트가 포함되어 있는지 확인
     const containsSimilarity = normalizedLine.includes(normalizedRecognized) ? 0.9 : 0
 
-    const finalSimilarity = Math.max(similarity, containsSimilarity)
+    const baseSimilarity = Math.max(similarity, containsSimilarity)
 
-    if (finalSimilarity > bestSimilarity) {
-      bestSimilarity = finalSimilarity
+    // 방향 결정
+    const direction: 'forward' | 'backward' | 'same' =
+      i > currentLine ? 'forward' :
+      i < currentLine ? 'backward' : 'same'
+
+    // 방향별 임계값 체크
+    if (direction === 'backward' && baseSimilarity < backwardThreshold) {
+      continue // 이전 줄은 높은 유사도 필요
+    }
+    if (direction === 'forward' && baseSimilarity < forwardThreshold) {
+      continue // 다음 줄은 낮은 임계값
+    }
+
+    // 전진 보너스 적용 (다음 줄에 유리하게)
+    const adjustedSimilarity = direction === 'forward'
+      ? baseSimilarity + forwardBias
+      : baseSimilarity
+
+    if (adjustedSimilarity > bestAdjustedSimilarity) {
+      bestAdjustedSimilarity = adjustedSimilarity
       bestMatch = {
         lineIndex: i,
-        confidence: finalSimilarity,
+        confidence: baseSimilarity, // 원본 유사도 저장
+        direction,
       }
     }
-  }
-
-  // 신뢰도 임계값 체크
-  if (bestMatch && bestMatch.confidence < 0.3) {
-    return null
   }
 
   return bestMatch
@@ -238,6 +290,10 @@ const findPrefixMatch = (
 
 /**
  * 현재 줄의 읽기 진행도 계산
+ *
+ * 연속 발화 시 (예: "안녕하세요 프롬프트 테스트 중입니다")
+ * 이전 줄 + 현재 줄이 한 번에 인식되면 현재 줄이 인식 텍스트에 포함됨.
+ * 이를 감지하기 위해 Prefix 매칭과 부분 문자열 포함 검사를 모두 수행.
  */
 export const calculateLineProgress = (
   lineText: string,
@@ -253,9 +309,33 @@ export const calculateLineProgress = (
     return { progress: 0, matchedLength: 0, totalLength: normLine.length }
   }
 
-  const matchedLength = findPrefixMatch(normLine, normRecognized)
+  // 1. Prefix 매칭 (기존 방식)
+  const prefixMatched = findPrefixMatch(normLine, normRecognized)
+  const prefixProgress = prefixMatched / normLine.length
+
+  // 2. 부분 문자열 포함 검사 (새로 추가)
+  // 인식 텍스트에 현재 줄이 포함되어 있으면 100% 진행
+  let containsProgress = 0
+  if (normRecognized.includes(normLine)) {
+    containsProgress = 1.0
+  } else {
+    // 줄의 앞부분(70% 이상)이 인식 텍스트 끝에 포함되어 있는지 확인
+    const minMatchLength = Math.ceil(normLine.length * 0.7)
+    for (let len = normLine.length; len >= minMatchLength; len--) {
+      const linePrefix = normLine.substring(0, len)
+      if (normRecognized.endsWith(linePrefix)) {
+        containsProgress = len / normLine.length
+        break
+      }
+    }
+  }
+
+  // 3. 더 높은 진행도 사용
+  const finalProgress = Math.max(prefixProgress, containsProgress)
+  const matchedLength = Math.round(finalProgress * normLine.length)
+
   return {
-    progress: matchedLength / normLine.length,
+    progress: finalProgress,
     matchedLength,
     totalLength: normLine.length,
   }

@@ -1,0 +1,1 @@
+Review overall plan/docs and suggest next steps, risks, gaps. Focus on architecture, data model, UX flow, and automation.

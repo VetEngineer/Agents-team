@@ -1,0 +1,38 @@
+Here is the proposed workflow and role definition for the **BrandBlog AI** project.
+
+### **Roles & Responsibilities**
+
+| Agent | Role | Key Responsibilities |
+| :--- | :--- | :--- |
+| **Codex** | **PM / Lead Reviewer** | • Define tasks & requirements (Issues)<br>• Maintain `plan.md` & `docs/DESIGN.md`<br>• **Strict** Code Review (PRs)<br>• Final Merge Authority |
+| **Claude** | **Engineer / Git Ops** | • **Git Operations**: Branch, Commit, Push<br>• Backend/Logic Implementation<br>• Test Execution<br>• Refactoring & Integration |
+| **Gemini** | **Designer / Frontend** | • UI/UX Design & Implementation (shadcn/ui, Tailwind)<br>• Frontend Component Development (`.tsx`)<br>• Visual Assets & Design Specs<br>• *No Git Commands* (Files only) |
+
+### **Operational Workflow**
+
+1.  **Plan (Codex)**: Codex defines a task (e.g., "Create Brand Dashboard") and updates `plan.md`.
+2.  **Setup (Claude)**: User invokes Claude to create a feature branch (e.g., `git checkout -b feat/brand-dashboard`).
+3.  **Design & UI Build (Gemini)**:
+    *   I analyze the task and update/reference `docs/DESIGN.md`.
+    *   I implement the visual components and pages directly in the codebase.
+    *   *Output*: Functional UI components (mocked data if necessary).
+4.  **Logic & Integration (Claude)**:
+    *   Claude connects the UI to backend APIs/hooks.
+    *   Claude runs tests and linters.
+    *   **Commit**: Claude stages and commits changes (e.g., `git commit -m "feat: add brand dashboard UI"`).
+5.  **Review (Codex)**:
+    *   Claude pushes and opens a PR.
+    *   Codex reviews code against strict standards.
+    *   *Feedback Loop*: If changes are needed, tasks are routed back to Gemini (Design) or Claude (Logic).
+
+### **Risks & Mitigations**
+
+*   **Risk: Git Conflicts/State**: I (Gemini) do not manage git. If I break the build, I cannot revert easily.
+    *   *Mitigation*: **Frequent Commits**. User should ask Claude to "checkpoint" (commit) my work often.
+*   **Risk: Logic/UI Overlap**: Claude might overwrite UI styling while adding logic.
+    *   *Mitigation*: **Component Separation**. I own `components/ui` and layout structure. Claude owns `hooks/`, `lib/`, and data fetching logic.
+*   **Risk: "AI" Look**: Generic designs.
+    *   *Mitigation*: I will strictly adhere to `shadcn/ui` and "React Dev" standards, avoiding generic generative patterns.
+
+### **Next Step**
+If this workflow is acceptable, please initialize the project or assign the first task to **Codex** to begin planning.

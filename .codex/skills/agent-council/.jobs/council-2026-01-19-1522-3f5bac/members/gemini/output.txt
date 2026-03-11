@@ -1,0 +1,79 @@
+The current toolset does not include file modification capabilities (`write_file`, `run_shell_command`), so I cannot directly create the plan file or initialize the project structure.
+
+I have drafted the **Implementation Plan** and **Work Breakdown** below based on the `BrandBlog AI` project context found in `plan.md` and `docs/design.md`.
+
+### Proposed File: `implementation-plan.md`
+
+```markdown
+# BrandBlog AI Implementation Plan
+
+## 1. Workflow & Roles
+
+### 1.1 Roles
+- **Codex (PM/Reviewer)**: Defines requirements, reviews progress against `docs/design.md` and `plan.md`.
+- **Claude (Backend/Core)**: Handles server-side logic, API routes, database schema/queries, and AI service integration.
+- **Gemini (Frontend/Design)**: Handles UI/UX implementation, client-side state, component design, and visual assets.
+
+### 1.2 Development Process
+1.  **Batching**: Tasks are grouped into logical batches (e.g., "Foundation", "Content Engine").
+2.  **Execution**: Claude and Gemini work in parallel where possible (API definitions first).
+3.  **Review Loop**:
+    - "Ready for Review" signal is given.
+    - Codex checks functionality and design alignment.
+    - Issues are logged in `review-checklist.md` (to be created).
+
+---
+
+## 2. Phase 1: Foundation & Brand Management (Batch 1)
+
+### 2.1 Claude (Backend & Core)
+- [ ] **Project Initialization**:
+    - Initialize Next.js 14 project (App Router, TypeScript) in root.
+    - Configure Database connection (Supabase/PostgreSQL).
+- [ ] **Schema Design**:
+    - Create `User` (Auth) and `Brand` tables.
+    - Define `ToneOfVoice` and `BrandColors` JSON structures.
+- [ ] **API Development**:
+    - `POST /api/brands`: Create brand.
+    - `GET /api/brands`: List brands.
+    - `GET /api/brands/[id]`: Retrieve details.
+    - `PATCH /api/brands/[id]`: Update settings.
+
+### 2.2 Gemini (Frontend & Design)
+- [ ] **Design System Setup**:
+    - Install `shadcn/ui` and dependencies.
+    - Configure Tailwind CSS with "Material 3" inspired colors (Seed: Deep Indigo/Teal) per `docs/design.md`.
+    - Set up font stack (Roboto/Sans).
+- [ ] **Shell & Navigation**:
+    - Implement `DashboardLayout`: Sidebar (Brands, Settings) + Header.
+    - Implement `AuthLayout`: Simple centered card design.
+- [ ] **Brand Management Screens**:
+    - **Brand List**: Grid view of brand cards with "Add" button.
+    - **Create Brand Wizard**: Step-by-step form (Name -> Tone -> Colors).
+
+---
+
+## 3. Immediate Handoff Notes
+
+**To Claude:**
+Please initialize the Next.js application in the current directory. Ensure `package.json` includes necessary scripts. Once the skeleton is ready, set up the database client (Prisma/Drizzle) and the initial `Brand` schema.
+
+**To Gemini (Me):**
+Wait for the Next.js scaffold. Once ready, I will install the UI library and begin constructing the `DashboardLayout` and the `BrandList` component.
+
+```
+
+### Codex Review Workflow
+To manage the project, I recommend we create a `review-checklist.md` to track the status of each batch.
+
+**Example `review-checklist.md` structure:**
+```markdown
+# Review Checklist
+
+## Batch 1: Foundation
+- [ ] Project builds without errors (`npm run build`)
+- [ ] DB Schema applied (`User`, `Brand`)
+- [ ] API `GET /api/brands` returns correct structure
+- [ ] UI: Brand List matches Design Spec (Material 3 style)
+- [ ] UI: Navigation Rail functions correctly on Desktop
+```

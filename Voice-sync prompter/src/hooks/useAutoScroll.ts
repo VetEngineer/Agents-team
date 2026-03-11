@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useScriptStore, useSettingsStore, useRecognitionStore } from '@/store'
-import { ContinuousMatcher, findMatchingLine, calculateLineProgress } from '@/utils'
+import { ContinuousMatcher, findMatchingLine, calculateLineProgress, detectBackwardKeyword } from '@/utils'
 
 interface UseAutoScrollOptions {
   scrollContainerRef: React.RefObject<HTMLElement>
@@ -89,11 +89,12 @@ export const useAutoScroll = ({ scrollContainerRef, lineRefs }: UseAutoScrollOpt
     // status가 'listening' 또는 'requesting'일 때 처리 (status 체크 완화)
     if (status !== 'listening' && status !== 'requesting') return
 
-    const currentLineText = lines[currentLine] || ''
+    let effectiveCurrentLine = currentLine
+    let currentLineText = lines[effectiveCurrentLine] || ''
 
     // 빈 줄이면 자동으로 다음 줄로 이동 (textToProcess 체크 전에 실행하여 음성 입력 없이도 동작)
     if (currentLineText.trim() === '') {
-      let nextLine = currentLine + 1
+      let nextLine = effectiveCurrentLine + 1
       // 연속된 빈 줄 건너뛰기
       while (nextLine < lines.length && lines[nextLine].trim() === '') {
         nextLine++
@@ -107,19 +108,44 @@ export const useAutoScroll = ({ scrollContainerRef, lineRefs }: UseAutoScrollOpt
         }
         setCurrentPosition(charPosition)
         scrollToLine(nextLine)
+
+        // 새 줄에서 계속 매칭 진행
+        effectiveCurrentLine = nextLine
+        currentLineText = lines[nextLine] || ''
+      } else {
+        return // 더 이상 줄이 없으면 종료
       }
-      return
     }
 
     // 중간 결과 또는 최종 결과 처리 (interimText 우선: 새 음성 입력 즉시 반영)
     const textToProcess = interimText || finalText
     if (!textToProcess || textToProcess === lastProcessedTextRef.current) return
 
+    // 0. "다시" 키워드 감지 시 이전 줄로 이동
+    const backwardKeyword = detectBackwardKeyword(textToProcess)
+    if (backwardKeyword.detected && effectiveCurrentLine > 0) {
+      if (import.meta.env.DEV) {
+        console.log('[VSP] Backward keyword detected:', backwardKeyword.keyword, '-> going to previous line')
+      }
+      const prevLine = effectiveCurrentLine - 1
+      setCurrentLine(prevLine)
+
+      // 줄 위치를 문자 위치로 변환
+      let charPosition = 0
+      for (let i = 0; i < prevLine; i++) {
+        charPosition += lines[i].length + 1
+      }
+      setCurrentPosition(charPosition)
+      scrollToLine(prevLine)
+      lastProcessedTextRef.current = textToProcess
+      return
+    }
+
     // 1. 현재 줄 진행도 계산
     const progress = calculateLineProgress(currentLineText, textToProcess)
 
     if (import.meta.env.DEV) {
-      console.log('[VSP] Progress:', progress.progress.toFixed(2), 'Line:', currentLine, 'Text:', textToProcess)
+      console.log('[VSP] Progress:', progress.progress.toFixed(2), 'Line:', effectiveCurrentLine, 'Text:', textToProcess)
     }
 
     // 2. 진행도 임계값 결정 (짧은 줄은 80%, 일반 줄은 90%)
@@ -127,7 +153,7 @@ export const useAutoScroll = ({ scrollContainerRef, lineRefs }: UseAutoScrollOpt
 
     // 3. 진행도가 임계값 이상이면 다음 줄로 이동
     if (progress.progress >= THRESHOLD) {
-      const nextLine = currentLine + 1
+      const nextLine = effectiveCurrentLine + 1
       if (nextLine < lines.length) {
         setCurrentLine(nextLine)
         setConfidence(progress.progress)
@@ -148,11 +174,19 @@ export const useAutoScroll = ({ scrollContainerRef, lineRefs }: UseAutoScrollOpt
       }
     }
 
-    // 4. 진행도가 낮으면 줄 점프 체크 (기존 로직)
+    // 4. 진행도가 낮으면 줄 점프 체크 (방향별 차등 임계값 적용)
     if (progress.progress < 0.3) {
-      const lineMatch = findMatchingLine(lines, textToProcess, currentLine, 5)
+      const lineMatch = findMatchingLine(lines, textToProcess, effectiveCurrentLine, 5, {
+        forwardBias: 0.1,       // 다음 줄에 보너스
+        backwardThreshold: 0.7, // 이전 줄은 높은 유사도 필요
+        forwardThreshold: 0.4,  // 다음 줄은 낮은 임계값
+      })
 
-      if (lineMatch && lineMatch.confidence > 0.4 && lineMatch.lineIndex !== currentLine) {
+      if (lineMatch && lineMatch.lineIndex !== effectiveCurrentLine) {
+        if (import.meta.env.DEV) {
+          console.log('[VSP] Line jump:', lineMatch.direction, 'to line', lineMatch.lineIndex, 'confidence:', lineMatch.confidence.toFixed(2))
+        }
+
         setCurrentLine(lineMatch.lineIndex)
         setConfidence(lineMatch.confidence)
 

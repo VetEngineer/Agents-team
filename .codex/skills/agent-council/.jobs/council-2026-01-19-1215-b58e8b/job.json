@@ -1,0 +1,19 @@
+{
+  "id": "council-2026-01-19-1215-b58e8b",
+  "createdAt": "2026-01-19T12:15:24.191Z",
+  "configPath": "/Volumes/Silvernine/Workspace/Agents-team/.codex/skills/agent-council/council.config.yaml",
+  "hostRole": "codex",
+  "chairmanRole": "codex",
+  "settings": {
+    "excludeChairmanFromMembers": true,
+    "timeoutSec": 120
+  },
+  "members": [
+    {
+      "name": "gemini",
+      "command": "gemini",
+      "emoji": "💎",
+      "color": "GREEN"
+    }
+  ]
+}

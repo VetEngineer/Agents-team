@@ -2,6 +2,7 @@ import { X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
 import { useSettingsStore } from '@/store'
+import { SubtitleSettings } from './SubtitleSettings'
 
 interface SettingsPanelProps {
   isOpen: boolean
@@ -122,6 +123,11 @@ export const SettingsPanel = ({ isOpen, onClose }: SettingsPanelProps) => {
                 />
               ))}
             </div>
+          </div>
+
+          {/* 자막 설정 */}
+          <div className="pt-4 border-t border-border">
+            <SubtitleSettings />
           </div>
 
           {/* 안내 문구 */}

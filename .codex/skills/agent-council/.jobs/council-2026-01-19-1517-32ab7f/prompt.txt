@@ -1,0 +1,1 @@
+Decide overall project workflow and roles: codex PR + strict review + issues, claude branch/commit/push, gemini-cli frontend design branch. Provide concise, practical workflow steps and risks.

@@ -1,0 +1,1 @@
+Initiate actual work plan: break down tasks into claude (backend/core) and gemini (frontend design) deliverables, and define Codex review/issue workflow. Provide first task batch and handoff notes.
